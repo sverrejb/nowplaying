@@ -5,10 +5,11 @@ import urllib.request
 import config
 
 from bs4 import BeautifulSoup
-from flask import Flask
+from flask import Flask, render_template
 
 app = Flask(__name__)
 lastfm_api_key = config.LASTFM_API_KEY
+
 
 # TEMP method for testing purposes
 def get_lyrics(artist, song_title):
@@ -53,13 +54,11 @@ def display_lyrics(username):
         if now_playing == 'true':
             recent_track_title = recent_track['name']
             recent_track_artist = recent_track['artist']['#text']
+            image = recent_track['image'][-1]['#text']
 
-            lyrics = get_lyrics(recent_track_artist, recent_track_title)
+            lyrics = get_lyrics(recent_track_artist, recent_track_title).split('\n')
 
-            body = '<div>'
-            body += '</br>'.join(lyrics.split('\n'))
-            body += '</div>'
-            return body
+            return render_template('lyrics.html', lyrics=lyrics, title=recent_track_title, image=image)
 
     except KeyError:
         return "You don't appear to be scrobbling right now."
