@@ -2,10 +2,11 @@ import json
 import re
 import urllib
 import urllib.request
-import config
 
 from bs4 import BeautifulSoup
 from flask import Flask, render_template
+
+import config
 
 app = Flask(__name__)
 lastfm_api_key = config.LASTFM_API_KEY
@@ -34,17 +35,17 @@ def get_lyrics(artist, song_title):
         lyrics = lyrics.replace('<br>', '').replace('</br>', '').replace('</div>', '').strip()
         return lyrics
     except Exception as e:
-        return "Exception occurred \n" + str(e)
+        return "Sorry, no lyrics found"
 
 
 @app.route('/')
 def hello_world():
-    return "Hello World"
+    return render_template('landing.html')
 
 
 @app.route('/user/<username>')
 def display_lyrics(username):
-    url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}'\
+    url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}' \
         .format(lastfm_api_key, username)
     response = urllib.request.urlopen(url)
     data = json.loads(response.read())
@@ -55,13 +56,13 @@ def display_lyrics(username):
             recent_track_title = recent_track['name']
             recent_track_artist = recent_track['artist']['#text']
             image = recent_track['image'][-1]['#text']
-
             lyrics = get_lyrics(recent_track_artist, recent_track_title).split('\n')
 
-            return render_template('lyrics.html', lyrics=lyrics, title=recent_track_title, image=image)
+            return render_template('lyrics.html', lyrics=lyrics, title=recent_track_title,
+                                   image=image, artist=recent_track_artist)
 
     except KeyError:
-        return "You don't appear to be scrobbling right now."
+        return render_template('not_scrobbling.html')
 
     return "This should not happen"
 
