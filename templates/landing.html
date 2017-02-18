@@ -3,13 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+
+    <style>
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-50%);
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            border: solid 3px #dcdcdc;
+            transition: box-shadow 0.3s, border 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="text"].focus {
+            border: solid 1px #707070;
+            box-shadow: 0 0 5px 1px #969696;
+        }
+
+    </style>
+
 </head>
 <body>
 
-<form action="/user/" method="get">
-    <input type="text" name="username">
-    <input type="submit" value="GO">
-</form>
+<div class="container">
+    <form onsubmit="location.href='/user/' + document.getElementById('myInput').value; return false;">
+        <input type="text" id="myInput" placeholder="Last.fm username" autofocus/>
+    </form>
 
+</div>
 </body>
 </html>

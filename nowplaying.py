@@ -35,7 +35,7 @@ def get_lyrics(artist, song_title):
         lyrics = lyrics.replace('<br>', '').replace('</br>', '').replace('</div>', '').strip()
         return lyrics
     except Exception as e:
-        return "Sorry, no lyrics found"
+        return "Sorry, no lyrics found :("
 
 
 @app.route('/')
