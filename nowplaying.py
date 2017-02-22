@@ -4,13 +4,18 @@ import urllib
 import urllib.request
 
 from bs4 import BeautifulSoup
-from flask import Flask, render_template
-from flask_socketio import SocketIO
+from flask import Flask, render_template, session, request
+from flask_socketio import SocketIO, emit, disconnect
+
 
 import config
 
+async_mode = None
+
 app = Flask(__name__)
-socketio = SocketIO(app)
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app, async_mode=async_mode)
+thread = None
 
 lastfm_api_key = config.LASTFM_API_KEY
 
@@ -41,13 +46,24 @@ def get_lyrics(artist, song_title):
         return "Sorry, no lyrics found :(\n" + str(e)
 
 
+def background_thread():
+    count = 0
+    while True:
+        socketio.sleep(10)
+        count += 1
+        print('emitting')
+        socketio.emit('my_response',
+                      {'data': 'Server generated event', 'count': count},
+                      namespace='/test')
+
+
 @app.route('/')
-def hello_world():
-    return render_template('landing.html')
+def index():
+    return render_template('index.html')
 
 
 @app.route('/user/<username>')
-def display_lyrics(username):
+def lyrics(username):
     url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}' \
         .format(lastfm_api_key, username)
     response = urllib.request.urlopen(url)
@@ -70,5 +86,34 @@ def display_lyrics(username):
     return "This should not happen"
 
 
+@socketio.on('my_event', namespace='/test')
+def test_message(message):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my_response',
+         {'data': message['data'], 'count': session['receive_count']})
+
+
+@socketio.on('disconnect_request', namespace='/test')
+def disconnect_request():
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my_response',
+         {'data': 'Disconnected!', 'count': session['receive_count']})
+    disconnect()
+
+
+@socketio.on('connect', namespace='/test')
+def test_connect():
+    global thread
+    print("connected")
+    if thread is None:
+        thread = socketio.start_background_task(target=background_thread)
+    emit('my_response', {'data': 'Connected', 'count': 0})
+
+
+@socketio.on('disconnect', namespace='/test')
+def test_disconnect():
+    print('Client disconnected', request.sid)
+
+
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, debug=True)
