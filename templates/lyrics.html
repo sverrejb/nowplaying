@@ -5,7 +5,7 @@
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Use a "/test" namespace.
             // An application can open a connection on multiple namespaces, and
             // Socket.IO will multiplex all those connections on a single
@@ -21,13 +21,13 @@
             // Event handler for new connections.
             // The callback function is invoked when a connection with the
             // server is established.
-            socket.on('connect', function() {
+            socket.on('connect', function () {
                 socket.emit('my_event', {data: 'I\'m connected!'});
             });
 
-            socket.on('my_response', function(msg) {
+            socket.on('my_response', function (msg) {
                 console.log(msg);
-                $('#lyrics').html('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+                $('#lyrics_text').html('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
             });
 
         });
@@ -53,6 +53,10 @@
             overflow: auto;
             height: auto;
             min-height: 100vh !important;
+        }
+
+        #lyrics_text {
+
         }
 
         .content:before {
@@ -94,12 +98,14 @@
 <div class="content">
     <div id="lyrics">
         <h1>{{ title }}</h1>
-        <H3>{{ artist }}</H3>
-        {% for line in lyrics %}
-            <span>{{ line }}</span><br>
-        {% else %}
-            {{ "Not able to do that, sir" }}
-        {% endfor %}
+        <h3>{{ artist }}</h3>
+        <div id="lyrics_text">
+            {% for line in lyrics %}
+                <span>{{ line }}</span><br>
+            {% else %}
+                {{ "Not able to do that, sir" }}
+            {% endfor %}
+        </div>
     </div>
 
     <div id="log"></div>
