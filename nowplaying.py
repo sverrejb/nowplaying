@@ -5,10 +5,13 @@ import urllib.request
 
 from bs4 import BeautifulSoup
 from flask import Flask, render_template
+from flask_socketio import SocketIO
 
 import config
 
 app = Flask(__name__)
+socketio = SocketIO(app)
+
 lastfm_api_key = config.LASTFM_API_KEY
 
 
@@ -35,7 +38,7 @@ def get_lyrics(artist, song_title):
         lyrics = lyrics.replace('<br>', '').replace('</br>', '').replace('</div>', '').strip()
         return lyrics
     except Exception as e:
-        return "Sorry, no lyrics found :("
+        return "Sorry, no lyrics found :(\n" + str(e)
 
 
 @app.route('/')
@@ -61,11 +64,11 @@ def display_lyrics(username):
             return render_template('lyrics.html', lyrics=lyrics, title=recent_track_title,
                                    image=image, artist=recent_track_artist)
 
-    except KeyError:
+    except KeyError: # TODO: FIX THIS
         return render_template('not_scrobbling.html')
 
     return "This should not happen"
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    socketio.run(app)
