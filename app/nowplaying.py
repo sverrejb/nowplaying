@@ -52,7 +52,7 @@ def background_thread():
         socketio.sleep(10)
         count += 1
         print('emitting')
-        socketio.emit('my_response',
+        socketio.emit('json',
                       {'data': 'Server generated event', 'count': count},
                       namespace='/test')
 
