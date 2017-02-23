@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>{{ title }}</title>
+    <title>Tittel</title>
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script type="text/javascript" charset="utf-8">
@@ -10,7 +10,11 @@
             var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
 
             socket.on('connect', function () {
-                socket.emit('my_event', {data: 'I\'m connected!'});
+                console.log('connected')
+            });
+
+            socket.on('my_response', function () {
+                socket.emit('send_username', {data: 'sverrebj'});
             });
 
             socket.on('json', function (msg) {
@@ -85,18 +89,12 @@
 <body>
 <div class="content">
     <div id="lyrics">
-        <h1>{{ title }}</h1>
-        <h3>{{ artist }}</h3>
+        <h1>Tittel</h1>
+        <h3>Artist</h3>
         <div id="lyrics_text">
-            {% for line in lyrics %}
-                <span>{{ line }}</span><br>
-            {% else %}
-                {{ "Not able to do that, sir" }}
-            {% endfor %}
+
         </div>
     </div>
-
-    <div id="log"></div>
 </div>
 
 </body>

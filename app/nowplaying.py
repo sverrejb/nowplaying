@@ -7,8 +7,7 @@ from bs4 import BeautifulSoup
 from flask import Flask, render_template, session, request
 from flask_socketio import SocketIO, emit, disconnect
 
-
-import config
+from app import config
 
 async_mode = None
 
@@ -46,6 +45,24 @@ def get_lyrics(artist, song_title):
         return "Sorry, no lyrics found :(\n" + str(e)
 
 
+def fetch_music_data():
+    url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}' \
+        .format(lastfm_api_key, username)
+    response = urllib.request.urlopen(url)
+    data = json.loads(response.read())
+    recent_track = data['recenttracks']['track'][0]
+    try:
+        now_playing = recent_track['@attr']['nowplaying']
+        if now_playing == 'true':
+            recent_track_title = recent_track['name']
+            recent_track_artist = recent_track['artist']['#text']
+            image = recent_track['image'][-1]['#text']
+            lyrics = get_lyrics(recent_track_artist, recent_track_title).split('\n')
+
+    except KeyError:  # TODO: FIX THIS
+        return render_template('not_scrobbling.html')
+
+
 def background_thread():
     count = 0
     while True:
@@ -64,33 +81,7 @@ def index():
 
 @app.route('/user/<username>')
 def lyrics(username):
-    url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}' \
-        .format(lastfm_api_key, username)
-    response = urllib.request.urlopen(url)
-    data = json.loads(response.read())
-    recent_track = data['recenttracks']['track'][0]
-    try:
-        now_playing = recent_track['@attr']['nowplaying']
-        if now_playing == 'true':
-            recent_track_title = recent_track['name']
-            recent_track_artist = recent_track['artist']['#text']
-            image = recent_track['image'][-1]['#text']
-            lyrics = get_lyrics(recent_track_artist, recent_track_title).split('\n')
-
-            return render_template('lyrics.html', lyrics=lyrics, title=recent_track_title,
-                                   image=image, artist=recent_track_artist)
-
-    except KeyError: # TODO: FIX THIS
-        return render_template('not_scrobbling.html')
-
-    return "This should not happen"
-
-
-@socketio.on('my_event', namespace='/test')
-def test_message(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']})
+    return render_template('lyrics.html')
 
 
 @socketio.on('disconnect_request', namespace='/test')
@@ -103,11 +94,15 @@ def disconnect_request():
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
+    emit('my_response', {'data': 'Connected', 'count': 0})
+
+
+@socketio.on('send_username', namespace='/test')
+def start_thread(message):
+    print(message)
     global thread
-    print("connected")
     if thread is None:
         thread = socketio.start_background_task(target=background_thread)
-    emit('my_response', {'data': 'Connected', 'count': 0})
 
 
 @socketio.on('disconnect', namespace='/test')
