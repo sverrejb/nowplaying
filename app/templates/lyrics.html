@@ -17,9 +17,9 @@
                 socket.emit('send_username', {data: 'sverrebj'});
             });
 
-            socket.on('json', function (msg) {
-                console.log(msg);
-                $('#lyrics_text').html('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+            socket.on('json', function (data) {
+                console.log(data.lyrics);
+                $('#lyrics_text').html(data.lyrics);
             });
 
         });

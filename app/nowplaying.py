@@ -45,7 +45,7 @@ def get_lyrics(artist, song_title):
         return "Sorry, no lyrics found :(\n" + str(e)
 
 
-def fetch_music_data():
+def fetch_music_data(username):
     url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}' \
         .format(lastfm_api_key, username)
     response = urllib.request.urlopen(url)
@@ -57,21 +57,22 @@ def fetch_music_data():
             recent_track_title = recent_track['name']
             recent_track_artist = recent_track['artist']['#text']
             image = recent_track['image'][-1]['#text']
-            lyrics = get_lyrics(recent_track_artist, recent_track_title).split('\n')
+            lyrics = get_lyrics(recent_track_artist, recent_track_title)
+            return {'lyrics': lyrics}
 
     except KeyError:  # TODO: FIX THIS
-        return render_template('not_scrobbling.html')
+        return {'lyrics': "no lyrics found"}
 
 
-def background_thread():
+def background_thread(args):
     count = 0
+    username = args[0]
     while True:
         socketio.sleep(10)
+        music_data = fetch_music_data(username)
+        print(str(music_data))
         count += 1
-        print('emitting')
-        socketio.emit('json',
-                      {'data': 'Server generated event', 'count': count},
-                      namespace='/test')
+        socketio.emit('json', music_data, namespace='/test')
 
 
 @app.route('/')
@@ -99,10 +100,10 @@ def test_connect():
 
 @socketio.on('send_username', namespace='/test')
 def start_thread(message):
-    print(message)
+    uname = message['data']
     global thread
     if thread is None:
-        thread = socketio.start_background_task(target=background_thread)
+        thread = socketio.start_background_task(target=background_thread, args=(uname,))
 
 
 @socketio.on('disconnect', namespace='/test')
