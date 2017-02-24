@@ -9,6 +9,22 @@
             var namespace = '/test';
             var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
 
+            var updateView = function (data) {
+                //TODO: Clear view method
+                $("#lyrics_text").html('');
+
+
+                $("#artist").html(data.artist);
+                $("#title").html(data.title);
+
+
+                var lyrics = data.lyrics.split('\n');
+                lyrics.forEach(function (line) {
+                    $("#lyrics_text").append('<span>' + line + '</span> </br>');
+                });
+
+            };
+
             socket.on('connect', function () {
                 console.log('connected')
             });
@@ -18,8 +34,8 @@
             });
 
             socket.on('json', function (data) {
-                console.log(data.lyrics);
-                $('#lyrics_text').html(data.lyrics);
+                console.log('data recieved');
+                updateView(data);
             });
 
         });
@@ -89,8 +105,8 @@
 <body>
 <div class="content">
     <div id="lyrics">
-        <h1>Tittel</h1>
-        <h3>Artist</h3>
+        <h1 id="title">Tittel</h1>
+        <h3 id="artist">Artist</h3>
         <div id="lyrics_text">
 
         </div>

@@ -58,7 +58,7 @@ def fetch_music_data(username):
             recent_track_artist = recent_track['artist']['#text']
             image = recent_track['image'][-1]['#text']
             lyrics = get_lyrics(recent_track_artist, recent_track_title)
-            return {'lyrics': lyrics}
+            return {'artist': recent_track_artist, 'title':recent_track_title, 'lyrics': lyrics, 'image':image}
 
     except KeyError:  # TODO: FIX THIS
         return {'lyrics': "no lyrics found"}
