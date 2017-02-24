@@ -50,8 +50,8 @@ def fetch_music_data(username):
     response = urllib.request.urlopen(url)
     data = json.loads(response.read())
 
-    recent_track = data['recenttracks']['track'][0]
     try:
+        recent_track = data['recenttracks']['track'][0]
         now_playing = recent_track['@attr']['nowplaying']
         if now_playing == 'true':
             recent_track_title = recent_track['name']
@@ -60,7 +60,7 @@ def fetch_music_data(username):
             lyrics = get_lyrics(recent_track_artist, recent_track_title)
             return {'artist': recent_track_artist, 'title': recent_track_title, 'lyrics': lyrics, 'image': image}
 
-    except KeyError as e:  # User found, but not scrobbling
+    except KeyError as e:
         return e
 
 
@@ -68,18 +68,22 @@ def background_thread(args):
     username = args[0]
     last_data = ''
     while True:
-        socketio.sleep(10)
         music_data = fetch_music_data(username)
         print(str(music_data))
 
         if type(music_data) == KeyError:
-            print('not scrobbling')
-            socketio.emit('not_scrobbling', namespace='/lyrics')
+            if music_data.args[0] == 'recenttracks':
+                print('no such user')
+                socketio.emit('no_user', namespace='/lyrics')
+            if music_data.args[0] == '@attr':
+                print('not scrobbling')
+                socketio.emit('not_scrobbling', namespace='/lyrics')
             continue
 
         if last_data != music_data:
             socketio.emit('json', music_data, namespace='/lyrics')
         last_data = music_data
+        socketio.sleep(10)
 
 
 @app.route('/')

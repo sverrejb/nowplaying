@@ -9,11 +9,18 @@
             var namespace = '/lyrics';
             var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
 
+            var drawBackground = function (image) {
+                document.styleSheets[0].
+                $('<style>#content:before{background-image: url(' + image +')}</style>').appendTo('head');
+
+            };
+
             var updateView = function (data) {
                 $("#lyrics_text").html('');
                 $("#artist").html(data.artist);
                 $("#title").html(data.title);
                 document.title = data.title;
+                drawBackground(data.image);
 
 
                 var lyrics = data.lyrics.split('\n');
@@ -38,8 +45,14 @@
 
             socket.on('not_scrobbling', function (data) {
                 console.log('Not scrobbling');
-               $('#lyrics_text').html('You don\'t appear to be scrobbling');
+                $('#lyrics_text').html('You don\'t appear to be scrobbling');
             });
+
+            socket.on('no_user', function (data) {
+                console.log('Not scrobbling');
+                $('#lyrics_text').html('No such last.fm user found, check your spelling');
+            });
+
 
         });
     </script>
@@ -67,10 +80,9 @@
         }
 
         #lyrics_text {
-
         }
 
-        .content:before {
+        #content:before {
             content: "";
             position: fixed;
             left: 0;
@@ -78,7 +90,7 @@
             z-index: -1;
 
             display: block;
-            background-image: url('{{ image }}');
+            background-image: url('');
             background-size: cover;
             width: 100%;
             height: 100%;
@@ -90,7 +102,7 @@
             filter: blur(5px);
         }
 
-        .content {
+        #content {
             overflow: auto;
             position: relative;
             height: 100%;
@@ -106,10 +118,10 @@
 
 </head>
 <body>
-<div class="content">
+<div id="content">
     <div id="lyrics">
-        <h1 id="title">Title</h1>
-        <h3 id="artist">Artist</h3>
+        <h1 id="title"></h1>
+        <h3 id="artist"></h3>
         <div id="lyrics_text">
 
         </div>
