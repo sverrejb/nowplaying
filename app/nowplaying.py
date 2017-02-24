@@ -13,10 +13,9 @@ async_mode = None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
+app.config['LASTFM_API_KEY'] = config.LASTFM_API_KEY
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
-
-lastfm_api_key = config.LASTFM_API_KEY
 
 
 # TEMP method for testing purposes
@@ -47,7 +46,7 @@ def get_lyrics(artist, song_title):
 
 def fetch_music_data(username):
     url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}' \
-        .format(lastfm_api_key, username)
+        .format(app.config['LASTFM_API_KEY'], username)
     response = urllib.request.urlopen(url)
     data = json.loads(response.read())
     recent_track = data['recenttracks']['track'][0]
@@ -58,21 +57,28 @@ def fetch_music_data(username):
             recent_track_artist = recent_track['artist']['#text']
             image = recent_track['image'][-1]['#text']
             lyrics = get_lyrics(recent_track_artist, recent_track_title)
-            return {'artist': recent_track_artist, 'title':recent_track_title, 'lyrics': lyrics, 'image':image}
+            return {'artist': recent_track_artist, 'title': recent_track_title, 'lyrics': lyrics, 'image': image}
 
-    except KeyError:  # TODO: FIX THIS
-        return {'lyrics': "no lyrics found"}
+    except KeyError as e:  # TODO: FIX THIS
+        return e
 
 
 def background_thread(args):
-    count = 0
     username = args[0]
+    last_data = ''
     while True:
         socketio.sleep(10)
         music_data = fetch_music_data(username)
         print(str(music_data))
-        count += 1
-        socketio.emit('json', music_data, namespace='/test')
+
+        if type(music_data) == KeyError:
+            print('not scrobbling')
+            socketio.emit('not_scrobbling', namespace='/lyrics')
+            continue
+
+        if last_data != music_data:
+            socketio.emit('json', music_data, namespace='/lyrics')
+        last_data = music_data
 
 
 @app.route('/')
@@ -85,7 +91,7 @@ def lyrics(username):
     return render_template('lyrics.html')
 
 
-@socketio.on('disconnect_request', namespace='/test')
+@socketio.on('disconnect_request', namespace='/lyrics')
 def disconnect_request():
     session['receive_count'] = session.get('receive_count', 0) + 1
     emit('my_response',
@@ -93,20 +99,21 @@ def disconnect_request():
     disconnect()
 
 
-@socketio.on('connect', namespace='/test')
+@socketio.on('connect', namespace='/lyrics')
 def test_connect():
     emit('my_response', {'data': 'Connected', 'count': 0})
 
 
-@socketio.on('send_username', namespace='/test')
+@socketio.on('send_username', namespace='/lyrics')
 def start_thread(message):
-    uname = message['data']
+    username = message['data']
+    print(username)
     global thread
     if thread is None:
-        thread = socketio.start_background_task(target=background_thread, args=(uname,))
+        thread = socketio.start_background_task(target=background_thread, args=(username,))
 
 
-@socketio.on('disconnect', namespace='/test')
+@socketio.on('disconnect', namespace='/lyrics')
 def test_disconnect():
     print('Client disconnected', request.sid)
 

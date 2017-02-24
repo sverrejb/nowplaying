@@ -6,7 +6,7 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
-            var namespace = '/test';
+            var namespace = '/lyrics';
             var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
 
             var updateView = function (data) {
@@ -22,7 +22,6 @@
                 lyrics.forEach(function (line) {
                     $("#lyrics_text").append('<span>' + line + '</span> </br>');
                 });
-
             };
 
             socket.on('connect', function () {
@@ -30,12 +29,18 @@
             });
 
             socket.on('my_response', function () {
-                socket.emit('send_username', {data: 'sverrebj'});
+                username = window.location.pathname.split("/").pop();
+                socket.emit('send_username', {data: username});
             });
 
             socket.on('json', function (data) {
                 console.log('data recieved');
                 updateView(data);
+            });
+
+            socket.on('not_scrobbling', function (data) {
+                console.log('Not scrobbling');
+               $('#lyrics_text').html('You don\'t appear to be scrobbling');
             });
 
         });
@@ -105,7 +110,7 @@
 <body>
 <div class="content">
     <div id="lyrics">
-        <h1 id="title">Tittel</h1>
+        <h1 id="title">Title</h1>
         <h3 id="artist">Artist</h3>
         <div id="lyrics_text">
 
