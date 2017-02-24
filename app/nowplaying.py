@@ -49,6 +49,7 @@ def fetch_music_data(username):
         .format(app.config['LASTFM_API_KEY'], username)
     response = urllib.request.urlopen(url)
     data = json.loads(response.read())
+
     recent_track = data['recenttracks']['track'][0]
     try:
         now_playing = recent_track['@attr']['nowplaying']
@@ -59,7 +60,7 @@ def fetch_music_data(username):
             lyrics = get_lyrics(recent_track_artist, recent_track_title)
             return {'artist': recent_track_artist, 'title': recent_track_title, 'lyrics': lyrics, 'image': image}
 
-    except KeyError as e:  # TODO: FIX THIS
+    except KeyError as e:  # User found, but not scrobbling
         return e
 
 
