@@ -78,7 +78,6 @@ def background_thread(args):
             if music_data.args[0] == '@attr':
                 print('not scrobbling')
                 socketio.emit('not_scrobbling', namespace='/lyrics')
-            continue
 
         if last_data != music_data:
             socketio.emit('json', music_data, namespace='/lyrics')
