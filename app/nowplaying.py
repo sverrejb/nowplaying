@@ -6,44 +6,21 @@ from flask import Flask, render_template, session, request
 from flask_socketio import SocketIO, emit, disconnect
 
 import config
-from scraper import get_lyrics
+from api_functions import get_lyrics, fetch_lastfm_music_data
 
 async_mode = None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-app.config['LASTFM_API_KEY'] = config.LASTFM_API_KEY
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 
 
-def fetch_music_data(username):
-    url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}' \
-        .format(app.config['LASTFM_API_KEY'], username)
-    response = urllib.request.urlopen(url)
-    data = json.loads(response.read())
-
-    try:
-        recent_track = data['recenttracks']['track'][0]
-        now_playing = recent_track['@attr']['nowplaying']
-        if now_playing == 'true':
-            recent_track_title = recent_track['name']
-            recent_track_artist = recent_track['artist']['#text']
-            image = recent_track['image'][-1]['#text']
-            lyrics = get_lyrics(recent_track_artist, recent_track_title)
-            return {'artist': recent_track_artist, 'title': recent_track_title, 'lyrics': lyrics, 'image': image}
-
-    except KeyError as e:
-        return e
-
-
 def background_thread(args):
     username = args[0]
-    last_data = ''
+    last_song = ''
     while True:
-        music_data = fetch_music_data(username)
-        print(str(music_data))
-
+        music_data = fetch_lastfm_music_data(username)
         if type(music_data) == KeyError:
             if music_data.args[0] == 'recenttracks':
                 print('no such user')
@@ -51,11 +28,16 @@ def background_thread(args):
             if music_data.args[0] == '@attr':
                 print('not scrobbling')
                 socketio.emit('not_scrobbling', namespace='/lyrics')
+                socketio.sleep(10)
+                continue
 
-        if last_data != music_data:
-            print(music_data)
-            socketio.emit('json', music_data, namespace='/lyrics')
-        last_data = music_data
+        if music_data['song_id'] != last_song:
+            if type(music_data) == dict:
+                print(music_data)
+                payload = music_data
+                payload['lyrics'] = get_lyrics(music_data['artist'], music_data['title'])
+                socketio.emit('json', payload, namespace='/lyrics')
+        last_song = music_data['song_id']
         socketio.sleep(10)
 
 
@@ -65,7 +47,7 @@ def index():
 
 
 @app.route('/user/<username>')
-def lyrics(username):
+def show_lyrics(username):
     return render_template('lyrics.html')
 
 

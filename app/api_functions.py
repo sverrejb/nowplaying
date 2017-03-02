@@ -2,8 +2,33 @@ import requests
 from bs4 import BeautifulSoup
 import config
 
+import json
+import urllib
+import urllib.request
+
+
 base_url = "http://api.genius.com"
 headers = {'Authorization': config.GENIUS_BEARER_TOKEN}
+
+
+def fetch_lastfm_music_data(username):
+    url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}' \
+        .format(config.LASTFM_API_KEY, username)
+    response = urllib.request.urlopen(url)
+    data = json.loads(response.read())
+
+    try:
+        recent_track = data['recenttracks']['track'][0]
+        now_playing = recent_track['@attr']['nowplaying']
+        if now_playing == 'true':
+            recent_track_title = recent_track['name']
+            recent_track_artist = recent_track['artist']['#text']
+            image = recent_track['image'][-1]['#text']
+            song_id = recent_track['mbid']
+            return {'artist': recent_track_artist, 'title': recent_track_title, 'image': image, 'song_id': song_id}
+
+    except KeyError as e:
+        return e
 
 
 def lyrics_from_song_api_path(song_api_path):
@@ -21,7 +46,6 @@ def lyrics_from_song_api_path(song_api_path):
 
 def get_lyrics(artist_name, song_title):
     artist_name = artist_name.replace(' & ', ' and ')
-    print(artist_name)
     song_title = song_title.replace('&', '\&')
     search_url = base_url + "/search?q=" + song_title
     response = requests.get(search_url, headers=headers)
