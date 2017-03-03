@@ -1,11 +1,6 @@
-import json
-import urllib
-import urllib.request
-
 from flask import Flask, render_template, session, request
 from flask_socketio import SocketIO, emit, disconnect
 
-import config
 from api_functions import get_lyrics, fetch_lastfm_music_data
 
 async_mode = None
@@ -16,11 +11,16 @@ socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 
 
+def user_is_currently_scrobbling():
+    return True
+
+
 def background_thread(args):
     username = args[0]
-    last_song = ''
+    last_song = {}
     while True:
         music_data = fetch_lastfm_music_data(username)
+        print(music_data)
         if type(music_data) == KeyError:
             if music_data.args[0] == 'recenttracks':
                 print('no such user')
@@ -30,14 +30,13 @@ def background_thread(args):
                 socketio.emit('not_scrobbling', namespace='/lyrics')
                 socketio.sleep(10)
                 continue
-
-        if music_data['song_id'] != last_song:
+        current_song = {music_data['artist'], music_data['title']}
+        if current_song != last_song:
             if type(music_data) == dict:
-                print(music_data)
                 payload = music_data
                 payload['lyrics'] = get_lyrics(music_data['artist'], music_data['title'])
                 socketio.emit('json', payload, namespace='/lyrics')
-        last_song = music_data['song_id']
+        last_song = current_song
         socketio.sleep(10)
 
 

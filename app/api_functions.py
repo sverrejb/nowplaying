@@ -24,8 +24,7 @@ def fetch_lastfm_music_data(username):
             recent_track_title = recent_track['name']
             recent_track_artist = recent_track['artist']['#text']
             image = recent_track['image'][-1]['#text']
-            song_id = recent_track['mbid']
-            return {'artist': recent_track_artist, 'title': recent_track_title, 'image': image, 'song_id': song_id}
+            return {'artist': recent_track_artist, 'title': recent_track_title, 'image': image}
 
     except KeyError as e:
         return e
