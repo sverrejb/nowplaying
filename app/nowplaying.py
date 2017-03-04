@@ -3,7 +3,7 @@ from flask_socketio import SocketIO, emit, disconnect
 
 from api_functions import get_lyrics, fetch_lastfm_music_data
 
-async_mode = None
+async_mode = 'eventlet'
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -33,10 +33,12 @@ def background_thread(args):
         current_song = {music_data['artist'], music_data['title']}
         if current_song != last_song:
             if type(music_data) == dict:
+                print('Updating client')
                 payload = music_data
-                payload['lyrics'] = get_lyrics(music_data['artist'], music_data['title'])
+                lyrics = get_lyrics(music_data['artist'], music_data['title'])
+                payload['lyrics'] = lyrics
                 socketio.emit('json', payload, namespace='/lyrics')
-        last_song = current_song
+                last_song = current_song
         socketio.sleep(10)
 
 

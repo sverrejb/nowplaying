@@ -10,3 +10,4 @@
 * refresh on page should give current lyrics
 * Handle edge cases where
 * break up program flow, only poll lastfm to check for new song playing
+* BUG: updating background before css is loaded crashes javascript

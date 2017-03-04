@@ -9,7 +9,7 @@
             var namespace = '/lyrics';
             var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
 
-            var updateBackground = function (img) {
+            var updateBackground = function (img){
                 var sheet = document.styleSheets[1];
                 sheet.deleteRule(1);
 
