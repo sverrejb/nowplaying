@@ -1,5 +1,9 @@
 # TODO:
 * Deploy to Heroku
+    * Procfile 
+    * Reqfile
+    * Runtime?
+    * Set variables/config
 * Mobile friendly
 * Templates
 * Landing page

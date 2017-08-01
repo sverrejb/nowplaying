@@ -14,17 +14,20 @@ headers = {'Authorization': config.GENIUS_BEARER_TOKEN}
 def fetch_lastfm_music_data(username):
     url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&api_key={}&limit=1&format=json&user={}' \
         .format(config.LASTFM_API_KEY, username)
+    print(url)
     response = urllib.request.urlopen(url)
     data = json.loads(response.read())
+    print(data)
 
     try:
         recent_track = data['recenttracks']['track'][0]
         now_playing = recent_track['@attr']['nowplaying']
         if now_playing == 'true':
+            print("works")
             recent_track_title = recent_track['name']
             recent_track_artist = recent_track['artist']['#text']
             image = recent_track['image'][-1]['#text']
-            return {'artist': recent_track_artist, 'title': recent_track_title, 'image': image}
+            return str({'artist': recent_track_artist, 'title': recent_track_title, 'image': image})
 
     except KeyError as e:
         return e
